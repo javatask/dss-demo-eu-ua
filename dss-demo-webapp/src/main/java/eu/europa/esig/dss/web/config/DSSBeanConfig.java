@@ -16,18 +16,23 @@ import eu.europa.esig.dss.service.http.commons.SSLCertificateLoader;
 import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
 import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
 import eu.europa.esig.dss.service.x509.aia.JdbcCacheAIASource;
+import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.spi.client.http.DSSFileLoader;
 import eu.europa.esig.dss.spi.client.http.IgnoreDataLoader;
 import eu.europa.esig.dss.spi.client.jdbc.JdbcCacheConnector;
 import eu.europa.esig.dss.spi.tsl.TrustedListsCertificateSource;
+import eu.europa.esig.dss.spi.x509.CertificateSource;
+import eu.europa.esig.dss.spi.x509.CommonCertificateSource;
 import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource;
 import eu.europa.esig.dss.spi.x509.aia.DefaultAIASource;
 import eu.europa.esig.dss.spi.x509.aia.OnlineAIASource;
 import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
 import eu.europa.esig.dss.token.KeyStoreSignatureTokenConnection;
+import eu.europa.esig.dss.tsl.function.GrantedTrustService;
 import eu.europa.esig.dss.tsl.function.OfficialJournalSchemeInformationURI;
 import eu.europa.esig.dss.tsl.job.TLValidationJob;
 import eu.europa.esig.dss.tsl.source.LOTLSource;
+import eu.europa.esig.dss.tsl.source.TLSource;
 import eu.europa.esig.dss.validation.CertificateVerifier;
 import eu.europa.esig.dss.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.validation.SignaturePolicyProvider;
@@ -320,11 +325,27 @@ public class DSSBeanConfig {
 			throw new DSSException("Unable to load the file " + ksFilename, e);
 		}
 	}
+
+	private TLSource ukranianTLSource() {
+		TLSource tlSource = new TLSource();
+		// Mandatory : The url where the TL needs to be downloaded
+		tlSource.setUrl("https://czo.gov.ua/download/tl/TL-UA.xml");
+
+		// A certificate source which contains the signing certificate(s) for the
+		// current trusted list
+		CertificateSource cs = new CommonCertificateSource();
+		cs.addCertificate(DSSUtils.loadCertificateFromBase64EncodedString(
+				"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"));
+		tlSource.setCertificateSource(cs);
+
+		return tlSource;
+	}
 	
 	@Bean 
 	public TLValidationJob job() {
 		TLValidationJob job = new TLValidationJob();
 		job.setTrustedListCertificateSource(trustedListSource());
+		job.setTrustedListSources(ukranianTLSource());
 		job.setListOfTrustedListSources(europeanLOTL());
 		job.setOfflineDataLoader(offlineLoader());
 		job.setOnlineDataLoader(onlineLoader());
